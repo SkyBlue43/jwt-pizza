@@ -42,7 +42,7 @@ jobs:
         with:
           path: dist/
 
-      - name: Update coverage
+      - name: Updated coverage
         run: |
           coverage=$(jq '.total.lines.pct' coverage/coverage-summary.json)
           color=$(echo "$coverage < 80" | bc | awk '{if ($1) print "red"; else print "green"}')
