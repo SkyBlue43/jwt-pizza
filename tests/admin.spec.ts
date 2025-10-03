@@ -9,4 +9,8 @@ test("Home page loads", async ({ page }) => {
   await expect(page).toHaveTitle("JWT Pizza");
 });
 
+async function basicInit(page: Page) {
+  await page.goto("/");
+}
+
 test("Admin login", async () => {});
