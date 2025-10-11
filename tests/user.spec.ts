@@ -136,3 +136,8 @@ test("updateUser", async ({ page }) => {
 
   await expect(page.getByRole("main")).toContainText("pizza dinerx");
 });
+
+test("getUsers", async ({ page }) => {
+  //basicInit(page);
+  await page.goto("/");
+});
