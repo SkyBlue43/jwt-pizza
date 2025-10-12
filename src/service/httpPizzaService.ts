@@ -93,6 +93,30 @@ class HttpPizzaService implements PizzaService {
     return Promise.resolve(result);
   }
 
+  async getUsers(user: User): Promise<User[]> {
+    const token = localStorage.getItem("token");
+    if (!token) return [];
+
+    try {
+      const response = await fetch("/api/user", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        localStorage.removeItem("token");
+        return [];
+      }
+
+      const users: User[] = await response.json();
+      return users;
+    } catch (e) {
+      localStorage.removeItem("token");
+      return [];
+    }
+  }
+
   async updateUser(updatedUser: User): Promise<User> {
     const { user, token } = await this.callEndpoint(
       `/api/user/${updatedUser.id}`,

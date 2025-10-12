@@ -1,11 +1,18 @@
-import React from 'react';
-import View from './view';
-import { useNavigate } from 'react-router-dom';
-import NotFound from './notFound';
-import Button from '../components/button';
-import { pizzaService } from '../service/service';
-import { Franchise, FranchiseList, Role, Store, User } from '../service/pizzaService';
-import { TrashIcon } from '../icons';
+import React from "react";
+import View from "./view";
+import { useNavigate } from "react-router-dom";
+import NotFound from "./notFound";
+import Button from "../components/button";
+import { pizzaService } from "../service/service";
+import {
+  Franchise,
+  FranchiseList,
+  Role,
+  Store,
+  User,
+  UserList,
+} from "../service/pizzaService";
+import { TrashIcon } from "../icons";
 
 interface Props {
   user: User | null;
@@ -13,115 +20,364 @@ interface Props {
 
 export default function AdminDashboard(props: Props) {
   const navigate = useNavigate();
-  const [franchiseList, setFranchiseList] = React.useState<FranchiseList>({ franchises: [], more: false });
+
+  // --- FRANCHISE STATES ---
+  const [franchiseList, setFranchiseList] = React.useState<FranchiseList>({
+    franchises: [],
+    more: false,
+  });
   const [franchisePage, setFranchisePage] = React.useState(0);
   const filterFranchiseRef = React.useRef<HTMLInputElement>(null);
 
+  // --- USER STATES ---
+  const [userList, setUserList] = React.useState<UserList>({
+    users: [],
+    more: false,
+  });
+  const [userPage, setUserPage] = React.useState(0);
+  const [showUsers, setShowUsers] = React.useState(false);
+
+  // Load franchises
   React.useEffect(() => {
-    (async () => {
-      setFranchiseList(await pizzaService.getFranchises(franchisePage, 3, '*'));
-    })();
-  }, [props.user, franchisePage]);
+    if (!showUsers) {
+      (async () => {
+        setFranchiseList(
+          await pizzaService.getFranchises(franchisePage, 3, "*")
+        );
+      })();
+    }
+  }, [props.user, franchisePage, showUsers]);
+
+  // Load users when toggled
+  // React.useEffect(() => {
+  //   if (showUsers) {
+  //     (async () => {
+  //       setUserList( {users:}
+  //         // { users: await pizzaService.getUsers(props.user!), more: false } //userPage, 10, "*")
+  //       );
+  //     })();
+  //   }
+  // }, [showUsers, userPage, props.user]);
+
+  React.useEffect(() => {
+    if (showUsers) {
+      (async () => {
+        // Simulate backend delay
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        // Use dummy user data
+        const dummyUsers: User[] = [
+          {
+            id: "1",
+            name: "Alice Johnson",
+            email: "alice@example.com",
+            password: "password123",
+            roles: [{ role: Role.Admin }],
+          },
+          {
+            id: "2",
+            name: "Bob Smith",
+            email: "bob@example.com",
+            password: "password123",
+            roles: [{ role: Role.Franchisee }],
+          },
+          {
+            id: "3",
+            name: "Charlie Davis",
+            email: "charlie@example.com",
+            password: "password123",
+            roles: [{ role: Role.Diner }],
+          },
+          {
+            id: "4",
+            name: "Diana Ross",
+            email: "diana@example.com",
+            password: "password123",
+            roles: [{ role: Role.Admin }],
+          },
+          {
+            id: "5",
+            name: "Evan Lee",
+            email: "evan@example.com",
+            password: "password123",
+            roles: [{ role: Role.Admin }],
+          },
+        ];
+
+        setUserList({
+          users: dummyUsers,
+          more: false,
+        });
+      })();
+    }
+  }, [showUsers, userPage, props.user]);
 
   function createFranchise() {
-    navigate('/admin-dashboard/create-franchise');
+    navigate("/admin-dashboard/create-franchise");
   }
 
   async function closeFranchise(franchise: Franchise) {
-    navigate('/admin-dashboard/close-franchise', { state: { franchise: franchise } });
+    navigate("/admin-dashboard/close-franchise", { state: { franchise } });
   }
 
   async function closeStore(franchise: Franchise, store: Store) {
-    navigate('/admin-dashboard/close-store', { state: { franchise: franchise, store: store } });
+    navigate("/admin-dashboard/close-store", { state: { franchise, store } });
+  }
+
+  async function deleteUser(user: User) {
+    return;
+    // if (!window.confirm(`Are you sure you want to delete ${user.name}?`))
+    //   return;
+    // await pizzaService.deleteUser(user);
+    // setUserList((prev) => ({
+    //   ...prev,
+    //   users: prev.users.filter((u) => u.id !== user.id),
+    // }));
   }
 
   async function filterFranchises() {
-    setFranchiseList(await pizzaService.getFranchises(franchisePage, 10, `*${filterFranchiseRef.current?.value}*`));
+    setFranchiseList(
+      await pizzaService.getFranchises(
+        franchisePage,
+        10,
+        `*${filterFranchiseRef.current?.value}*`
+      )
+    );
   }
 
   let response = <NotFound />;
+
   if (Role.isRole(props.user, Role.Admin)) {
     response = (
-      <View title="Mama Ricci's kitchen">
+      <View title="Mama Ricci's Kitchen">
         <div className="text-start py-8 px-4 sm:px-6 lg:px-8">
-          <h3 className="text-neutral-100 text-xl">Franchises</h3>
+          <h3 className="text-neutral-100 text-xl">
+            {showUsers ? "Users" : "Franchises"}
+          </h3>
+
           <div className="bg-neutral-100 overflow-clip my-4">
             <div className="flex flex-col">
               <div className="-m-1.5 overflow-x-auto">
                 <div className="p-1.5 min-w-full inline-block align-middle">
                   <div className="overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="uppercase text-neutral-100 bg-slate-400 border-b-2 border-gray-500">
-                        <tr>
-                          {['Franchise', 'Franchisee', 'Store', 'Revenue', 'Action'].map((header) => (
-                            <th key={header} scope="col" className="px-6 py-3 text-center text-xs font-medium">
-                              {header}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      {franchiseList.franchises.map((franchise, findex) => {
-                        return (
-                          <tbody key={findex} className="divide-y divide-gray-200">
+                    {!showUsers ? (
+                      // --- FRANCHISE TABLE ---
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="uppercase text-neutral-100 bg-slate-400 border-b-2 border-gray-500">
+                          <tr>
+                            {[
+                              "Franchise",
+                              "Franchisee",
+                              "Store",
+                              "Revenue",
+                              "Action",
+                            ].map((header) => (
+                              <th
+                                key={header}
+                                scope="col"
+                                className="px-6 py-3 text-center text-xs font-medium"
+                              >
+                                {header}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        {franchiseList.franchises.map((franchise, findex) => (
+                          <tbody
+                            key={findex}
+                            className="divide-y divide-gray-200"
+                          >
                             <tr className="border-neutral-500 border-t-2">
-                              <td className="text-start px-2 whitespace-nowrap text-l font-mono text-orange-600">{franchise.name}</td>
-                              <td className="text-start px-2 whitespace-nowrap text-sm font-normal text-gray-800" colSpan={3}>
-                                {franchise.admins?.map((o) => o.name).join(', ')}
+                              <td className="text-start px-2 whitespace-nowrap text-l font-mono text-orange-600">
+                                {franchise.name}
+                              </td>
+                              <td
+                                className="text-start px-2 whitespace-nowrap text-sm font-normal text-gray-800"
+                                colSpan={3}
+                              >
+                                {franchise.admins
+                                  ?.map((o) => o.name)
+                                  .join(", ")}
                               </td>
                               <td className="px-6 py-1 whitespace-nowrap text-end text-sm font-medium">
-                                <button type="button" className="px-2 py-1 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-1 border-orange-400 text-orange-400  hover:border-orange-800 hover:text-orange-800" onClick={() => closeFranchise(franchise)}>
+                                <button
+                                  type="button"
+                                  className="px-2 py-1 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-1 border-orange-400 text-orange-400 hover:border-orange-800 hover:text-orange-800"
+                                  onClick={() => closeFranchise(franchise)}
+                                >
                                   <TrashIcon />
                                   Close
                                 </button>
                               </td>
                             </tr>
 
-                            {franchise.stores.map((store, sindex) => {
-                              return (
-                                <tr key={sindex} className="bg-neutral-100">
-                                  <td className="text-end px-2 whitespace-nowrap text-sm text-gray-800" colSpan={3}>
-                                    {store.name}
-                                  </td>
-                                  <td className="text-end px-2 whitespace-nowrap text-sm text-gray-800">{store.totalRevenue?.toLocaleString()} ₿</td>
-                                  <td className="px-6 py-1 whitespace-nowrap text-end text-sm font-medium">
-                                    <button type="button" className="px-2 py-1 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-1 border-orange-400 text-orange-400 hover:border-orange-800 hover:text-orange-800" onClick={() => closeStore(franchise, store)}>
-                                      <TrashIcon />
-                                      Close
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
+                            {franchise.stores.map((store, sindex) => (
+                              <tr key={sindex} className="bg-neutral-100">
+                                <td
+                                  className="text-end px-2 whitespace-nowrap text-sm text-gray-800"
+                                  colSpan={3}
+                                >
+                                  {store.name}
+                                </td>
+                                <td className="text-end px-2 whitespace-nowrap text-sm text-gray-800">
+                                  {store.totalRevenue?.toLocaleString()} ₿
+                                </td>
+                                <td className="px-6 py-1 whitespace-nowrap text-end text-sm font-medium">
+                                  <button
+                                    type="button"
+                                    className="px-2 py-1 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-1 border-orange-400 text-orange-400 hover:border-orange-800 hover:text-orange-800"
+                                    onClick={() => closeStore(franchise, store)}
+                                  >
+                                    <TrashIcon />
+                                    Close
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
                           </tbody>
-                        );
-                      })}
-                      <tfoot>
-                        <tr>
-                          <td className="px-1 py-1">
-                            <input type="text" ref={filterFranchiseRef} name="filterFranchise" placeholder="Filter franchises" className="px-2 py-1 text-sm border border-gray-300 rounded-lg" />
-                            <button type="submit" className="ml-2 px-2 py-1 text-sm font-semibold rounded-lg border border-orange-400 text-orange-400 hover:border-orange-800 hover:text-orange-800" onClick={filterFranchises}>
-                              Submit
-                            </button>
-                          </td>
-                          <td colSpan={4} className="text-end text-sm font-medium">
-                            <button className="w-12 p-1 text-sm font-semibold rounded-lg border border-transparent bg-white text-grey border-grey m-1 hover:bg-orange-200 disabled:bg-neutral-300 " onClick={() => setFranchisePage(franchisePage - 1)} disabled={franchisePage <= 0}>
-                              «
-                            </button>
-                            <button className="w-12 p-1 text-sm font-semibold rounded-lg border border-transparent bg-white text-grey border-grey m-1 hover:bg-orange-200 disabled:bg-neutral-300" onClick={() => setFranchisePage(franchisePage + 1)} disabled={!franchiseList.more}>
-                              »
-                            </button>
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
+                        ))}
+                        <tfoot>
+                          <tr>
+                            <td className="px-1 py-1">
+                              <input
+                                type="text"
+                                ref={filterFranchiseRef}
+                                name="filterFranchise"
+                                placeholder="Filter franchises"
+                                className="px-2 py-1 text-sm border border-gray-300 rounded-lg"
+                              />
+                              <button
+                                type="submit"
+                                className="ml-2 px-2 py-1 text-sm font-semibold rounded-lg border border-orange-400 text-orange-400 hover:border-orange-800 hover:text-orange-800"
+                                onClick={filterFranchises}
+                              >
+                                Submit
+                              </button>
+                            </td>
+                            <td
+                              colSpan={4}
+                              className="text-end text-sm font-medium"
+                            >
+                              <button
+                                className="w-12 p-1 text-sm font-semibold rounded-lg border border-transparent bg-white text-grey border-grey m-1 hover:bg-orange-200 disabled:bg-neutral-300 "
+                                onClick={() =>
+                                  setFranchisePage(franchisePage - 1)
+                                }
+                                disabled={franchisePage <= 0}
+                              >
+                                «
+                              </button>
+                              <button
+                                className="w-12 p-1 text-sm font-semibold rounded-lg border border-transparent bg-white text-grey border-grey m-1 hover:bg-orange-200 disabled:bg-neutral-300"
+                                onClick={() =>
+                                  setFranchisePage(franchisePage + 1)
+                                }
+                                disabled={!franchiseList.more}
+                              >
+                                »
+                              </button>
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    ) : (
+                      // --- USER TABLE ---
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="uppercase text-neutral-100 bg-slate-400 border-b-2 border-gray-500">
+                          <tr>
+                            {["User", "Email", "Role", "Action"].map(
+                              (header) => (
+                                <th
+                                  key={header}
+                                  scope="col"
+                                  className="px-6 py-3 text-center text-xs font-medium"
+                                >
+                                  {header}
+                                </th>
+                              )
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {userList.users.map((user, index) => (
+                            <tr key={index}>
+                              <td className="px-6 py-2 text-sm text-gray-800">
+                                {user.name}
+                              </td>
+                              <td className="px-6 py-2 text-sm text-gray-800">
+                                {user.email}
+                              </td>
+                              <td className="px-6 py-2 text-sm text-gray-800">
+                                help
+                                {/* {user.roles[0]} */}
+                              </td>
+                              <td className="px-6 py-2 text-sm text-right">
+                                <button
+                                  type="button"
+                                  className="px-2 py-1 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-1 border-orange-400 text-orange-400 hover:border-orange-800 hover:text-orange-800"
+                                  onClick={() => deleteUser(user)}
+                                >
+                                  <TrashIcon />
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr>
+                            <td
+                              colSpan={4}
+                              className="text-end text-sm font-medium"
+                            >
+                              <button
+                                className="w-12 p-1 text-sm font-semibold rounded-lg border border-transparent bg-white text-grey border-grey m-1 hover:bg-orange-200 disabled:bg-neutral-300"
+                                onClick={() => setUserPage(userPage - 1)}
+                                disabled={userPage <= 0}
+                              >
+                                «
+                              </button>
+                              <button
+                                className="w-12 p-1 text-sm font-semibold rounded-lg border border-transparent bg-white text-grey border-grey m-1 hover:bg-orange-200 disabled:bg-neutral-300"
+                                onClick={() => setUserPage(userPage + 1)}
+                                disabled={!userList.more}
+                              >
+                                »
+                              </button>
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div>
-          <Button className="w-36 text-xs sm:text-sm sm:w-64" title="Add Franchise" onPress={createFranchise} />
+
+        {/* Bottom Buttons */}
+        <div className="flex gap-4 justify-start">
+          {!showUsers ? (
+            <>
+              <Button
+                className="w-36 text-xs sm:text-sm sm:w-64"
+                title="Add Franchise"
+                onPress={createFranchise}
+              />
+              <Button
+                className="w-36 text-xs sm:text-sm sm:w-64"
+                title="View Users"
+                onPress={() => setShowUsers(true)}
+              />
+            </>
+          ) : (
+            <Button
+              className="w-36 text-xs sm:text-sm sm:w-64"
+              title="Back to Franchises"
+              onPress={() => setShowUsers(false)}
+            />
+          )}
         </div>
       </View>
     );

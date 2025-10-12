@@ -140,4 +140,9 @@ test("updateUser", async ({ page }) => {
 test("getUsers", async ({ page }) => {
   //basicInit(page);
   await page.goto("/");
+  await page.getByRole("link", { name: "Login" }).click();
+  await page.getByRole("textbox", { name: "Email address" }).fill("a@jwt.com");
+  await page.getByRole("textbox", { name: "Password" }).fill("admin");
+  await page.getByRole("button", { name: "Login" }).click();
+  await page.getByRole("link", { name: "Admin" }).click();
 });
