@@ -48,69 +48,12 @@ export default function AdminDashboard(props: Props) {
     }
   }, [props.user, franchisePage, showUsers]);
 
-  // Load users when toggled
-  // React.useEffect(() => {
-  //   if (showUsers) {
-  //     (async () => {
-  //       setUserList( {users:}
-  //         // { users: await pizzaService.getUsers(props.user!), more: false } //userPage, 10, "*")
-  //       );
-  //     })();
-  //   }
-  // }, [showUsers, userPage, props.user]);
-
   React.useEffect(() => {
-    if (showUsers) {
-      (async () => {
-        // Simulate backend delay
-        await new Promise((resolve) => setTimeout(resolve, 300));
-
-        // Use dummy user data
-        const dummyUsers: User[] = [
-          {
-            id: "1",
-            name: "Alice Johnson",
-            email: "alice@example.com",
-            password: "password123",
-            roles: [{ role: Role.Admin }],
-          },
-          {
-            id: "2",
-            name: "Bob Smith",
-            email: "bob@example.com",
-            password: "password123",
-            roles: [{ role: Role.Franchisee }],
-          },
-          {
-            id: "3",
-            name: "Charlie Davis",
-            email: "charlie@example.com",
-            password: "password123",
-            roles: [{ role: Role.Diner }],
-          },
-          {
-            id: "4",
-            name: "Diana Ross",
-            email: "diana@example.com",
-            password: "password123",
-            roles: [{ role: Role.Admin }],
-          },
-          {
-            id: "5",
-            name: "Evan Lee",
-            email: "evan@example.com",
-            password: "password123",
-            roles: [{ role: Role.Admin }],
-          },
-        ];
-
-        setUserList({
-          users: dummyUsers,
-          more: false,
-        });
-      })();
-    }
-  }, [showUsers, userPage, props.user]);
+    (async () => {
+      const data = await pizzaService.getUsers(userPage, 3, "*");
+      setUserList(data);
+    })();
+  }, [userPage]);
 
   function createFranchise() {
     navigate("/admin-dashboard/create-franchise");
@@ -125,14 +68,13 @@ export default function AdminDashboard(props: Props) {
   }
 
   async function deleteUser(user: User) {
-    return;
-    // if (!window.confirm(`Are you sure you want to delete ${user.name}?`))
-    //   return;
-    // await pizzaService.deleteUser(user);
-    // setUserList((prev) => ({
-    //   ...prev,
-    //   users: prev.users.filter((u) => u.id !== user.id),
-    // }));
+    if (!window.confirm(`Are you sure you want to delete ${user.name}?`))
+      return;
+    await pizzaService.deleteUser(user);
+    setUserList((prev) => ({
+      ...prev,
+      users: prev.users.filter((u) => u.id !== user.id),
+    }));
   }
 
   async function filterFranchises() {
@@ -308,8 +250,7 @@ export default function AdminDashboard(props: Props) {
                                 {user.email}
                               </td>
                               <td className="px-6 py-2 text-sm text-gray-800">
-                                help
-                                {/* {user.roles[0]} */}
+                                {user.roles?.[0]?.role || "No role"}
                               </td>
                               <td className="px-6 py-2 text-sm text-right">
                                 <button

@@ -10,6 +10,7 @@ import {
   Endpoints,
   OrderResponse,
   JWTPayload,
+  UserList,
 } from "./pizzaService";
 
 const pizzaServiceUrl = import.meta.env.VITE_PIZZA_SERVICE_URL;
@@ -93,28 +94,18 @@ class HttpPizzaService implements PizzaService {
     return Promise.resolve(result);
   }
 
-  async getUsers(user: User): Promise<User[]> {
-    const token = localStorage.getItem("token");
-    if (!token) return [];
+  async getUsers(
+    page: number = 0,
+    limit: number = 10,
+    nameFilter: string = "*"
+  ): Promise<UserList> {
+    return this.callEndpoint(
+      `/api/user?page=${page}&limit=${limit}&name=${nameFilter}`
+    );
+  }
 
-    try {
-      const response = await fetch("/api/user", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        localStorage.removeItem("token");
-        return [];
-      }
-
-      const users: User[] = await response.json();
-      return users;
-    } catch (e) {
-      localStorage.removeItem("token");
-      return [];
-    }
+  async deleteUser(user: User): Promise<void> {
+    return this.callEndpoint(`/api/franchise/${user.id}`, "DELETE");
   }
 
   async updateUser(updatedUser: User): Promise<User> {

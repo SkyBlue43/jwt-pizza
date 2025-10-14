@@ -137,12 +137,100 @@ test("updateUser", async ({ page }) => {
   await expect(page.getByRole("main")).toContainText("pizza dinerx");
 });
 
-test("getUsers", async ({ page }) => {
-  //basicInit(page);
+async function basicInit2(page: Page) {
+  let loggedInUser: User | undefined;
+  const validUsers3: Record<string, User> = {
+    "a@jwt.com": {
+      id: "3",
+      name: "常用名字",
+      email: "a@jwt.com",
+      password: "admin",
+      roles: [{ role: Role.Admin }],
+    },
+  };
+
+  await page.route("*/**/api/auth", async (route) => {
+    const method = route.request().method();
+
+    if (method === "PUT") {
+      const loginReq = route.request().postDataJSON();
+      const user = validUsers3[loginReq.email];
+      if (!user || user.password !== loginReq.password) {
+        await route.fulfill({ status: 401, json: { error: "Unauthorized" } });
+        return;
+      }
+      loggedInUser = validUsers3[loginReq.email];
+      const loginRes = {
+        user: loggedInUser,
+        token: "abcdef",
+      };
+      await route.fulfill({ json: loginRes });
+    }
+  });
+
+  await page.route(
+    "*/**/api/franchise?page=0&limit=3&name=*",
+    async (route) => {
+      const method = route.request().method();
+      if (method == "GET") {
+        await route.fulfill({ json: { franchises: [], more: false } });
+      }
+    }
+  );
+
+  await page.route("*/**/api/user?page=0&limit=3&name=*", async (route) => {
+    const method = route.request().method();
+    if (method == "GET") {
+      await route.fulfill({
+        json: {
+          users: [
+            {
+              id: 1,
+              name: "pizza diner",
+              email: "d@jwt.com",
+              roles: [
+                {
+                  role: "diner",
+                  objectId: 0,
+                },
+              ],
+            },
+          ],
+          more: false,
+        },
+      });
+    }
+  });
+
   await page.goto("/");
+}
+
+test("getUsers", async ({ page }) => {
+  basicInit2(page);
   await page.getByRole("link", { name: "Login" }).click();
   await page.getByRole("textbox", { name: "Email address" }).fill("a@jwt.com");
   await page.getByRole("textbox", { name: "Password" }).fill("admin");
   await page.getByRole("button", { name: "Login" }).click();
   await page.getByRole("link", { name: "Admin" }).click();
+  await page.getByRole("button", { name: "View Users" }).click();
+  await page
+    .getByRole("row", { name: "pizza diner d@jwt.com diner" })
+    .getByRole("button")
+    .click({
+      button: "right",
+    });
+  await expect(
+    page
+      .getByRole("row", { name: "pizza diner d@jwt.com diner" })
+      .getByRole("button")
+  ).toBeVisible();
+  page.once("dialog", (dialog) => {
+    console.log(`Dialog message: ${dialog.message()}`);
+    dialog.dismiss().catch(() => {});
+  });
+  await page
+    .getByRole("row", { name: "pizza diner d@jwt.com diner" })
+    .getByRole("button")
+    .click();
+  await page.getByRole("button", { name: "Back to Franchises" }).click();
 });
